@@ -50,8 +50,6 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
-        android:background="@drawable/reg_edittext_style"
-        android:hint="Email"
         android:id="@+id/regEmail"
         android:layout_width="265dp"
         android:layout_height="wrap_content"
@@ -60,8 +58,10 @@
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginBottom="4dp"
+        android:background="@drawable/reg_edittext_style"
         android:ems="10"
-        android:inputType="textPersonName"
+        android:hint="Email"
+        android:inputType="textEmailAddress"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

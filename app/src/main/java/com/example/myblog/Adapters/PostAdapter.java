@@ -54,7 +54,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
         return mData.size();
     }
 
-    public class MyViewHolder extends RecyclerView.ViewHolder{
+    public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener{
 
         TextView tvTitle;
         ImageView imgPost;
@@ -84,13 +84,20 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
                     postDetailActivity.putExtra("postDate", (long) mData.get(position).getTimeStamp());
 
                     mContext.startActivity(postDetailActivity);
-
-
-
                 }
             });
         }
 
+        @Override
+        public boolean onLongClick(View v) {
 
+            int position = getAdapterPosition();
+
+            mData.remove(position);
+            notifyItemRemoved(position);
+            notifyItemRangeChanged(position, mData.size());
+
+            return false;
+        }
     }
 }
