@@ -17,6 +17,8 @@ import com.bumptech.glide.Glide;
 import com.example.myblog.Activities.PostDetailActivity;
 import com.example.myblog.Models.Post;
 import com.example.myblog.R;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.List;
 
@@ -39,6 +41,11 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
         return new MyViewHolder(row);
     }
 
+    public void deletePost(int position) {
+
+
+    }
+
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
 
@@ -54,7 +61,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
         return mData.size();
     }
 
-    public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener{
+    public class MyViewHolder extends RecyclerView.ViewHolder{
 
         TextView tvTitle;
         ImageView imgPost;
@@ -86,18 +93,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
                     mContext.startActivity(postDetailActivity);
                 }
             });
-        }
-
-        @Override
-        public boolean onLongClick(View v) {
-
-            int position = getAdapterPosition();
-
-            mData.remove(position);
-            notifyItemRemoved(position);
-            notifyItemRangeChanged(position, mData.size());
-
-            return false;
         }
     }
 }

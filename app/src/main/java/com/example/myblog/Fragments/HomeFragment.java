@@ -16,6 +16,8 @@ import android.view.ViewGroup;
 import com.example.myblog.Adapters.PostAdapter;
 import com.example.myblog.Models.Post;
 import com.example.myblog.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -48,6 +50,7 @@ public class HomeFragment extends Fragment {
     RecyclerView postRecyclerView;
     PostAdapter postAdapter;
     FirebaseDatabase firebaseDatabase;
+    FirebaseAuth mAuth;
     DatabaseReference databaseReference;
 
     List<Post> postList;
@@ -94,12 +97,10 @@ public class HomeFragment extends Fragment {
 
         firebaseDatabase = FirebaseDatabase.getInstance();
         databaseReference = firebaseDatabase.getReference("Posts");
+        mAuth = FirebaseAuth.getInstance();
 
         return fragmentView;
     }
-
-
-
 
     @Override
     public void onStart() {

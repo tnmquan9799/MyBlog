@@ -284,14 +284,11 @@ public class ProfileFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
                 currentUserPostList = new ArrayList<>();
+
                 for (DataSnapshot postsnap: dataSnapshot.getChildren()) {
 
-                    if (postsnap.getValue(Post.class).getUserId() == currentUser.getUid()) {
-
-                        Post post = postsnap.getValue(Post.class);
-                        currentUserPostList.add(0, post);
-                    }
-
+                    Post post = postsnap.getValue(Post.class);
+                    currentUserPostList.add(0, post);
                     profilePostRV.smoothScrollToPosition(0);
                 }
 
