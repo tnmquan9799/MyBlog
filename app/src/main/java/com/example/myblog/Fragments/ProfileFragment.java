@@ -1,14 +1,49 @@
 package com.example.myblog.Fragments;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.example.myblog.Activities.Home;
+import com.example.myblog.Activities.RegisterActivity;
+import com.example.myblog.Adapters.PostAdapter;
+import com.example.myblog.Models.Post;
 import com.example.myblog.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserProfileChangeRequest;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -29,6 +64,24 @@ public class ProfileFragment extends Fragment {
     private String mParam2;
 
     private OnFragmentInteractionListener mListener;
+
+    static int PReqCode = 1;
+    static int REQUESTCODE = 1;
+    Uri newUserPhotoUri;
+
+    RecyclerView profilePostRV;
+    CircleImageView currentUserPhoto;
+    EditText currentUserName;
+    TextView currentUserEmail;
+    ImageView updateBtn;
+
+    PostAdapter postAdapter;
+    FirebaseDatabase firebaseDatabase;
+    DatabaseReference databaseReference;
+    FirebaseUser currentUser;
+
+    List<Post> currentUserPostList;
+
 
     public ProfileFragment() {
         // Required empty public constructor
@@ -64,8 +117,193 @@ public class ProfileFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_profile, container, false);
+
+        //Inflate the layout for this fragment
+        final View fragmentView = inflater.inflate(R.layout.fragment_profile, container, false);
+
+        currentUserPhoto = fragmentView.findViewById(R.id.profile_user_photo);
+        currentUserEmail = fragmentView.findViewById(R.id.profile_user_email);
+        currentUserName = fragmentView.findViewById(R.id.profile_user_name);
+
+        currentUserName.setFocusable(false);
+        currentUserName.setFocusableInTouchMode(false);
+        currentUserName.setClickable(false);
+
+        updateBtn = fragmentView.findViewById(R.id.profile_update_btn);
+
+        updateBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                updateBtn.setImageResource(R.drawable.ic_done_black_24dp);
+
+                currentUserName.setFocusable(true);
+                currentUserName.setFocusableInTouchMode(true);
+                currentUserName.setClickable(true);
+
+                currentUserPhoto.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        if (Build.VERSION.SDK_INT >= 22) {
+
+                            checkAndRequestForPermission();
+                        } else {
+
+                            openGallery();
+                        }
+
+
+                    }
+                });
+
+                updateBtn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        updateBtn.setImageResource(R.drawable.ic_settings_black_24dp);
+
+                        currentUserName.setFocusable(false);
+                        currentUserName.setFocusableInTouchMode(false);
+                        currentUserName.setClickable(false);
+
+                        String newDisplayName = currentUserName.getText().toString();
+
+                        updateProfile(newDisplayName, newUserPhotoUri);
+
+                    }
+                });
+            }
+        });
+
+        profilePostRV = fragmentView.findViewById(R.id.profile_postRV);
+        profilePostRV.setLayoutManager(new LinearLayoutManager(getActivity()));
+        profilePostRV.setHasFixedSize(true);
+
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        databaseReference = firebaseDatabase.getReference("Posts");
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+
+
+        return fragmentView;
+    }
+
+    private void updateProfile(String name, Uri newUserPhotoUri) {
+
+        UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                .setDisplayName(name)
+                .setPhotoUri(newUserPhotoUri)
+                .build();
+
+        currentUser.updateProfile(profileUpdates)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+
+                        if (task.isSuccessful()) {
+
+                            showMessage("Update successfully");
+                            reloadFragment();
+                        }
+                    }
+                });
+    }
+
+    private void showMessage(String message) {
+
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    private void checkAndRequestForPermission() {
+
+        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE)) {
+
+                Toast.makeText(getContext(), "Please accept for required permission", Toast.LENGTH_SHORT).show();
+            } else {
+
+                ActivityCompat.requestPermissions(getActivity(),
+                                                    new String[] {Manifest.permission.READ_EXTERNAL_STORAGE},
+                                                    PReqCode);
+            }
+        } else {
+
+            openGallery();
+        }
+    }
+
+    private void updateUI() {
+
+        Intent homeActivity = new Intent(getContext(), Home.class);
+        startActivity(homeActivity);
+    }
+
+    private void openGallery() {
+
+        Intent galleryIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        galleryIntent.setType("image/*");
+        startActivityForResult(galleryIntent, REQUESTCODE);
+    }
+
+    private void reloadFragment() {
+
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        if (Build.VERSION.SDK_INT >= 26) {
+
+            ft.setReorderingAllowed(false);
+        }
+
+        ft.detach(this).attach(this).commit();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        newUserPhotoUri = data.getData();
+        currentUserPhoto.setImageURI(newUserPhotoUri);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        if (currentUser != null) {
+
+            currentUserName.setText(currentUser.getDisplayName());
+            currentUserEmail.setText(currentUser.getEmail());
+            Glide.with(this).load(currentUser.getPhotoUrl()).into(currentUserPhoto);
+        }
+
+
+        databaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                currentUserPostList = new ArrayList<>();
+                for (DataSnapshot postsnap: dataSnapshot.getChildren()) {
+
+                    if (postsnap.getValue(Post.class).getUserId() == currentUser.getUid()) {
+
+                        Post post = postsnap.getValue(Post.class);
+                        currentUserPostList.add(0, post);
+                    }
+
+                    profilePostRV.smoothScrollToPosition(0);
+                }
+
+                postAdapter = new PostAdapter(getActivity(), currentUserPostList);
+                profilePostRV.setAdapter(postAdapter);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -99,5 +337,12 @@ public class ProfileFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        updateUI();
     }
 }

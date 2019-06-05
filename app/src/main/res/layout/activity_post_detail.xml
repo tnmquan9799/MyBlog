@@ -118,6 +118,7 @@
             app:layout_constraintTop_toTopOf="@+id/post_detail_currentuser_photo" />
 
         <Button
+            android:hint="Add"
             android:textSize="16dp"
             android:id="@+id/post_detail_add_comment_btn"
             android:layout_width="65dp"

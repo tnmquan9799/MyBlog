@@ -97,7 +97,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
             notifyItemRemoved(position);
             notifyItemRangeChanged(position, mData.size());
 
-            
             return false;
         }
     }
