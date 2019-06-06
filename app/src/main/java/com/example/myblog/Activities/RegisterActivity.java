@@ -134,6 +134,7 @@ public class RegisterActivity extends AppCompatActivity {
     private void updateUserInfo(final String name, Uri pickedImgUri, final FirebaseUser currentUser) {
 
         StorageReference mStorage = FirebaseStorage.getInstance().getReference().child("users_photos");
+
         final StorageReference imageFilePath = mStorage.child(pickedImgUri.getLastPathSegment());
         imageFilePath.putFile(pickedImgUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
 
@@ -210,8 +211,8 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-            pickedImgUri = data.getData();
-            ImgUserPhoto.setImageURI(pickedImgUri);
+        pickedImgUri = data.getData();
+        ImgUserPhoto.setImageURI(pickedImgUri);
     }
 
     @Override

@@ -213,8 +213,14 @@ public class Home extends AppCompatActivity
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference("Posts").push();
 
+//        FirebaseDatabase databaseUserId = FirebaseDatabase.getInstance();
+        DatabaseReference myUserIdRef = database.getReference("UserIdPosts").child(currentUser.getUid()).push();
+
         String key =  myRef.getKey();
         post.setPostKey(key);
+
+        String myUserIdKey = myUserIdRef.getKey();
+        post.setPostKey(myUserIdKey);
 
         myRef.setValue(post).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
@@ -227,6 +233,23 @@ public class Home extends AppCompatActivity
                 popupTitle.setText("");
                 popupDescription.setText("");
                 popupPostImage.setImageURI(null);
+
+                popAddPost.dismiss();
+
+            }
+        });
+
+        myUserIdRef.setValue(post).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+
+//                showMessage("Post added");
+//                popupClickProgress.setVisibility(View.INVISIBLE);
+//                popupAddBtn.setVisibility(View.VISIBLE);
+//
+//                popupTitle.setText("");
+//                popupDescription.setText("");
+//                popupPostImage.setImageURI(null);
 
                 popAddPost.dismiss();
 

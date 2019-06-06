@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -30,6 +31,7 @@ import com.example.myblog.Adapters.PostAdapter;
 import com.example.myblog.Models.Post;
 import com.example.myblog.R;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -39,6 +41,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +79,7 @@ public class ProfileFragment extends Fragment {
     EditText currentUserName;
     TextView currentUserEmail;
     ImageView updateBtn;
+    TextView updateText;
 
     PostAdapter postAdapter;
     FirebaseDatabase firebaseDatabase;
@@ -124,6 +130,7 @@ public class ProfileFragment extends Fragment {
         currentUserPhoto = fragmentView.findViewById(R.id.profile_user_photo);
         currentUserEmail = fragmentView.findViewById(R.id.profile_user_email);
         currentUserName = fragmentView.findViewById(R.id.profile_user_name);
+        updateText = fragmentView.findViewById(R.id.profile_text);
 
         currentUserName.setFocusable(false);
         currentUserName.setFocusableInTouchMode(false);
@@ -136,6 +143,7 @@ public class ProfileFragment extends Fragment {
             public void onClick(View v) {
 
                 updateBtn.setImageResource(R.drawable.ic_done_black_24dp);
+                updateText.setText("Finish");
 
                 currentUserName.setFocusable(true);
                 currentUserName.setFocusableInTouchMode(true);
@@ -162,6 +170,7 @@ public class ProfileFragment extends Fragment {
                     public void onClick(View v) {
 
                         updateBtn.setImageResource(R.drawable.ic_settings_black_24dp);
+                        updateText.setText("Update ");
 
                         currentUserName.setFocusable(false);
                         currentUserName.setFocusableInTouchMode(false);
@@ -180,34 +189,79 @@ public class ProfileFragment extends Fragment {
         profilePostRV.setLayoutManager(new LinearLayoutManager(getActivity()));
         profilePostRV.setHasFixedSize(true);
 
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        databaseReference = firebaseDatabase.getReference("Posts");
+
+        profilePostRV.setOnLongClickListener(new View.OnLongClickListener() {
+
+            @Override
+            public boolean onLongClick(View v) {
+
+//                KEEP GOING !!!
+//                AAAAAAAAAAAAAAAAA
+//                LET'S GO
+
+                return false;
+            }
+        });
+
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        String currentUserId = currentUser.getUid();
+
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        databaseReference = firebaseDatabase.getReference("UserIdPosts").child(currentUserId);
 
 
 
         return fragmentView;
     }
 
-    private void updateProfile(String name, Uri newUserPhotoUri) {
+    private void deletePost(String postKey) {
 
-        UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                .setDisplayName(name)
-                .setPhotoUri(newUserPhotoUri)
-                .build();
+        DatabaseReference dPost = FirebaseDatabase.getInstance().getReference("Posts").child("postKey");
+        DatabaseReference  dUserIdPost = FirebaseDatabase.getInstance().getReference("UserIdPosts").child(currentUser.getUid()).child("postKey");
 
-        currentUser.updateProfile(profileUpdates)
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
+        dPost.removeValue();
+        dUserIdPost.removeValue();
+
+        showMessage("Post deleted!");
+    }
+
+    private void updateProfile(final String name, Uri newUserPhotoUri) {
+
+        StorageReference mStorage = FirebaseStorage.getInstance().getReference().child("users_photos");
+
+        final StorageReference imageFilePath = mStorage.child(newUserPhotoUri.getLastPathSegment());
+        imageFilePath.putFile(newUserPhotoUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                imageFilePath.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
-                    public void onComplete(@NonNull Task<Void> task) {
+                    public void onSuccess(Uri uri) {
 
-                        if (task.isSuccessful()) {
+                        UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                .setDisplayName(name)
+                                .setPhotoUri(uri)
+                                .build();
 
-                            showMessage("Update successfully");
-                            reloadFragment();
-                        }
+                        currentUser.updateProfile(profileUpdates)
+                                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+
+                                        if (task.isSuccessful()) {
+
+                                            showMessage("Update successfully");
+                                            reloadFragment();
+                                        }
+                                    }
+                                });
                     }
                 });
+            }
+        });
+
+
     }
 
     private void showMessage(String message) {
@@ -275,6 +329,7 @@ public class ProfileFragment extends Fragment {
 
             currentUserName.setText(currentUser.getDisplayName());
             currentUserEmail.setText(currentUser.getEmail());
+
             Glide.with(this).load(currentUser.getPhotoUrl()).into(currentUserPhoto);
         }
 
